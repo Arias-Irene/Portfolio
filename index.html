@@ -1,26 +1,67 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" href="resources/portafoliologo.png" type="image/png">
-    <title>Portafolio | Victor Rey Sanz</title>
-    <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portafolio</title>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+    }
+
+    header {
+      height: 100px;
+      background-color: #222;
+      color: white;
+      display: flex;
+      align-items: center;
+      position: relative;
+      padding: 0 40px;
+    }
+
+    .perfil {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .perfil img {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid white;
+    }
+
+    .perfil span {
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    .titulo {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 42px;
+      font-weight: bold;
+      letter-spacing: 3px;
+    }
+  </style>
 </head>
 <body>
 
-    <header>
+  <header>
     <div class="perfil">
-      <img src="resources/perfilprov.png" alt="Foto de perfil">
-      <span>Irene Arias</span>
+      <img src="foto-perfil.jpg" alt="Foto de perfil">
+      <span>Tu Nombre</span>
     </div>
 
     <div class="titulo">
-      PORTFOLIO
+      PORTAFOLIO
     </div>
   </header>
-
-    
 
 </body>
 </html>
