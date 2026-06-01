@@ -134,12 +134,43 @@
         padding: 32px 24px;
       }
     }
+    .galeria-imagenes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 22px;
+  margin-top: 28px;
+}
+
+.tarjeta-imagen {
+  overflow: hidden;
+  border-radius: 18px;
+  background: #f2eee9;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.tarjeta-imagen img {
+  width: 100%;
+  height: 280px;
+  display: block;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.tarjeta-imagen img:hover {
+  transform: scale(1.04);
+}
+
+.mensaje-galeria {
+  margin-top: 24px;
+  color: #777;
+  font-style: italic;
+}
   </style>
 </head>
 <body>
   <header>
     <div class="perfil">
-      <img src="resources/perfilprov.png" alt="Foto de perfil" />
+      <img src="resources/fotoperfil.jpg" alt="Foto de perfil" />
       <span>Irene Arias</span>
     </div>
 
@@ -150,10 +181,10 @@
 
   <main>
     <nav class="botones-secciones" aria-label="Navegación del portfolio">
-      <a href="#2danimaciones">2D Animaciones</a>
+      <a href="#2danimaciones">2D Animations</a>
       <a href="#conceptart">Concept Art</a>
-      <a href="#videojuegos">Videojuegos</a>
-      <a href="#contacto">Contacto</a>
+      <a href="#videojuegos">Videogames</a>
+      <a href="#contacto">Contact</a>
     </nav>
 
     <section id="2danimaciones">
@@ -162,19 +193,65 @@
     </section>
 
     <section id="conceptart">
-      <h2>Concept Art</h2>
-      <p>UwU</p>
-    </section>
+  <h2>Concept Art</h2>
+  <p>Galería de concept art.</p>
+
+  <div id="conceptart-gallery" class="galeria-imagenes"></div>
+  <p id="conceptart-message" class="mensaje-galeria"></p>
+</section>
 
     <section id="videojuegos">
-      <h2>Videojuegos</h2>
+      <h2>Videogames</h2>
       <p>UwU</p>
     </section>
 
     <section id="contacto">
-      <h2>Contacto</h2>
+      <h2>Contact</h2>
       <p>UwU</p>
     </section>
   </main>
+
+  <script>
+  async function cargarConceptArt() {
+    const galeria = document.getElementById("conceptart-gallery");
+    const mensaje = document.getElementById("conceptart-message");
+
+    try {
+      const respuesta = await fetch("resources/conceptART.json", {
+        cache: "no-store"
+      });
+
+      if (!respuesta.ok) {
+        throw new Error("No se pudo cargar conceptART.json");
+      }
+
+      const imagenes = await respuesta.json();
+
+      if (!Array.isArray(imagenes) || imagenes.length === 0) {
+        mensaje.textContent = "Todavía no hay imágenes en la galería.";
+        return;
+      }
+
+      imagenes.forEach((rutaImagen, index) => {
+        const tarjeta = document.createElement("article");
+        tarjeta.className = "tarjeta-imagen";
+
+        const imagen = document.createElement("img");
+        imagen.src = rutaImagen;
+        imagen.alt = `Concept Art ${index + 1}`;
+        imagen.loading = "lazy";
+
+        tarjeta.appendChild(imagen);
+        galeria.appendChild(tarjeta);
+      });
+    } catch (error) {
+      mensaje.textContent = "No se ha podido cargar la galería de Concept Art.";
+      console.error(error);
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", cargarConceptArt);
+</script>
+
 </body>
 </html>
