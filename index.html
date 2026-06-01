@@ -110,6 +110,93 @@
       color: #555;
     }
 
+    .galeria-imagenes {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 22px;
+      margin-top: 28px;
+    }
+
+    .tarjeta-imagen {
+      flex: 0 0 auto;
+      display: flex;
+      overflow: hidden;
+      border-radius: 18px;
+      background: transparent;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    }
+
+    .tarjeta-imagen img,
+    .tarjeta-imagen video {
+      width: auto;
+      height: auto;
+      max-width: 260px;
+      max-height: 280px;
+      display: block;
+      object-fit: contain;
+      cursor: pointer;
+      transition: transform 0.3s ease;
+    }
+
+    .tarjeta-imagen img:hover,
+    .tarjeta-imagen video:hover {
+      transform: scale(1.04);
+    }
+
+    .mensaje-galeria {
+      margin-top: 24px;
+      color: #777;
+      font-style: italic;
+    }
+
+    .visor-imagen {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 32px;
+      background: rgba(0, 0, 0, 0.85);
+    }
+
+    .visor-imagen.activo {
+      display: flex;
+    }
+
+    .visor-imagen img,
+    .visor-imagen video {
+      max-width: 90vw;
+      max-height: 85vh;
+      object-fit: contain;
+      border-radius: 14px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+    }
+
+    .visor-imagen video {
+      background: #000;
+    }
+
+    .cerrar-visor {
+      position: absolute;
+      top: 24px;
+      right: 32px;
+      width: 44px;
+      height: 44px;
+      border: none;
+      border-radius: 50%;
+      background: #fff;
+      color: #222;
+      font-size: 2rem;
+      line-height: 1;
+      cursor: pointer;
+    }
+
+    .cerrar-visor:hover {
+      background: #ddd;
+    }
+
     @media (max-width: 700px) {
       header {
         grid-template-columns: 1fr;
@@ -133,38 +220,13 @@
       section {
         padding: 32px 24px;
       }
+
+      .tarjeta-imagen img,
+      .tarjeta-imagen video {
+        max-width: 100%;
+        max-height: 230px;
+      }
     }
-    .galeria-imagenes {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 22px;
-  margin-top: 28px;
-}
-
-.tarjeta-imagen {
-  overflow: hidden;
-  border-radius: 18px;
-  background: #f2eee9;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-}
-
-.tarjeta-imagen img {
-  width: 100%;
-  height: 280px;
-  display: block;
-  object-fit: cover;
-  transition: transform 0.3s ease;
-}
-
-.tarjeta-imagen img:hover {
-  transform: scale(1.04);
-}
-
-.mensaje-galeria {
-  margin-top: 24px;
-  color: #777;
-  font-style: italic;
-}
   </style>
 </head>
 <body>
@@ -189,16 +251,17 @@
 
     <section id="2danimaciones">
       <h2>2D Animaciones</h2>
-      <p>UwU</p>
+
+      <div id="animation2d-gallery" class="galeria-imagenes"></div>
+      <p id="animation2d-message" class="mensaje-galeria">Cargando galería...</p>
     </section>
 
     <section id="conceptart">
-  <h2>Concept Art</h2>
-  <p>Galería de concept art.</p>
+      <h2>Concept Art</h2>
 
-  <div id="conceptart-gallery" class="galeria-imagenes"></div>
-  <p id="conceptart-message" class="mensaje-galeria"></p>
-</section>
+      <div id="conceptart-gallery" class="galeria-imagenes"></div>
+      <p id="conceptart-message" class="mensaje-galeria">Cargando galería...</p>
+    </section>
 
     <section id="videojuegos">
       <h2>Videogames</h2>
@@ -211,47 +274,202 @@
     </section>
   </main>
 
+  <div id="visor-imagen" class="visor-imagen" aria-hidden="true">
+    <button id="cerrar-visor" class="cerrar-visor" aria-label="Cerrar visor">&times;</button>
+    <img id="imagen-ampliada" src="" alt="Imagen ampliada" />
+    <video id="video-ampliado" src="" controls></video>
+  </div>
+
   <script>
-  async function cargarConceptArt() {
-    const galeria = document.getElementById("conceptart-gallery");
-    const mensaje = document.getElementById("conceptart-message");
+    const CARPETA_CONCEPTART = "resources/conceptART";
+    const CARPETA_2D_ANIMATION = "resources/2Danimation";
 
-    try {
-      const respuesta = await fetch("resources/conceptART.json", {
-        cache: "no-store"
+    const EXTENSIONES_MEDIA = [
+      { extension: "jpg", tipo: "imagen" },
+      { extension: "jpeg", tipo: "imagen" },
+      { extension: "png", tipo: "imagen" },
+      { extension: "webp", tipo: "imagen" },
+      { extension: "gif", tipo: "imagen" },
+      { extension: "mp4", tipo: "video" },
+      { extension: "webm", tipo: "video" },
+      { extension: "ogg", tipo: "video" },
+      { extension: "mov", tipo: "video" },
+      { extension: "JPG", tipo: "imagen" },
+      { extension: "JPEG", tipo: "imagen" },
+      { extension: "PNG", tipo: "imagen" },
+      { extension: "WEBP", tipo: "imagen" },
+      { extension: "GIF", tipo: "imagen" },
+      { extension: "MP4", tipo: "video" },
+      { extension: "WEBM", tipo: "video" },
+      { extension: "OGG", tipo: "video" },
+      { extension: "MOV", tipo: "video" }
+    ];
+    const MAX_ARCHIVOS_GALERIA = 100;
+    const MAX_FALLOS_SEGUIDOS = 5;
+
+    function existeImagen(ruta) {
+      return new Promise((resolve) => {
+        const imagen = new Image();
+
+        imagen.onload = () => resolve(true);
+        imagen.onerror = () => resolve(false);
+        imagen.src = ruta;
       });
+    }
 
-      if (!respuesta.ok) {
-        throw new Error("No se pudo cargar conceptART.json");
+    function existeVideo(ruta) {
+      return new Promise((resolve) => {
+        const video = document.createElement("video");
+
+        video.preload = "metadata";
+        video.onloadedmetadata = () => resolve(true);
+        video.onerror = () => resolve(false);
+        video.src = ruta;
+      });
+    }
+
+    async function buscarRutaMedia(carpeta, numero) {
+      for (const archivo of EXTENSIONES_MEDIA) {
+        const ruta = `${carpeta}/${numero}.${archivo.extension}`;
+        const existe = archivo.tipo === "imagen"
+          ? await existeImagen(ruta)
+          : await existeVideo(ruta);
+
+        if (existe) {
+          return {
+            ruta,
+            tipo: archivo.tipo
+          };
+        }
       }
 
-      const imagenes = await respuesta.json();
+      return null;
+    }
 
-      if (!Array.isArray(imagenes) || imagenes.length === 0) {
-        mensaje.textContent = "Todavía no hay imágenes en la galería.";
-        return;
+    function abrirVisorMedia(rutaMedia, textoAlternativo, tipo) {
+      const visor = document.getElementById("visor-imagen");
+      const imagenAmpliada = document.getElementById("imagen-ampliada");
+      const videoAmpliado = document.getElementById("video-ampliado");
+
+      imagenAmpliada.style.display = "none";
+      videoAmpliado.style.display = "none";
+      imagenAmpliada.src = "";
+      videoAmpliado.src = "";
+
+      if (tipo === "imagen") {
+        imagenAmpliada.src = rutaMedia;
+        imagenAmpliada.alt = textoAlternativo;
+        imagenAmpliada.style.display = "block";
+      } else {
+        videoAmpliado.src = rutaMedia;
+        videoAmpliado.style.display = "block";
+        videoAmpliado.play();
       }
 
-      imagenes.forEach((rutaImagen, index) => {
-        const tarjeta = document.createElement("article");
-        tarjeta.className = "tarjeta-imagen";
+      visor.classList.add("activo");
+      visor.setAttribute("aria-hidden", "false");
+      document.body.style.overflow = "hidden";
+    }
 
+    function cerrarVisorImagen() {
+      const visor = document.getElementById("visor-imagen");
+      const imagenAmpliada = document.getElementById("imagen-ampliada");
+      const videoAmpliado = document.getElementById("video-ampliado");
+
+      visor.classList.remove("activo");
+      visor.setAttribute("aria-hidden", "true");
+      imagenAmpliada.src = "";
+      videoAmpliado.pause();
+      videoAmpliado.src = "";
+      document.body.style.overflow = "";
+    }
+
+    function crearTarjetaMedia(media, numero, nombreSeccion) {
+      const tarjeta = document.createElement("article");
+      tarjeta.className = "tarjeta-imagen";
+
+      if (media.tipo === "imagen") {
         const imagen = document.createElement("img");
-        imagen.src = rutaImagen;
-        imagen.alt = `Concept Art ${index + 1}`;
+        imagen.src = media.ruta;
+        imagen.alt = `${nombreSeccion} ${numero}`;
         imagen.loading = "lazy";
 
+        imagen.addEventListener("click", () => {
+          abrirVisorMedia(media.ruta, imagen.alt, media.tipo);
+        });
+
         tarjeta.appendChild(imagen);
-        galeria.appendChild(tarjeta);
-      });
-    } catch (error) {
-      mensaje.textContent = "No se ha podido cargar la galería de Concept Art.";
-      console.error(error);
+      } else {
+        const video = document.createElement("video");
+        video.src = media.ruta;
+        video.muted = true;
+        video.loop = true;
+        video.autoplay = true;
+        video.playsInline = true;
+        video.preload = "auto";
+
+        video.addEventListener("loadedmetadata", () => {
+          video.play();
+        });
+
+        video.addEventListener("click", () => {
+          abrirVisorMedia(media.ruta, `${nombreSeccion} ${numero}`, media.tipo);
+        });
+
+        tarjeta.appendChild(video);
+      }
+
+      return tarjeta;
     }
-  }
 
-  document.addEventListener("DOMContentLoaded", cargarConceptArt);
-</script>
+    async function cargarGaleria(carpeta, idGaleria, idMensaje, nombreSeccion) {
+      const galeria = document.getElementById(idGaleria);
+      const mensaje = document.getElementById(idMensaje);
+      let archivosEncontrados = 0;
+      let fallosSeguidos = 0;
 
+      for (let numero = 1; numero <= MAX_ARCHIVOS_GALERIA; numero++) {
+        const media = await buscarRutaMedia(carpeta, numero);
+
+        if (media) {
+          const tarjeta = crearTarjetaMedia(media, numero, nombreSeccion);
+          galeria.appendChild(tarjeta);
+          archivosEncontrados++;
+          fallosSeguidos = 0;
+        } else {
+          fallosSeguidos++;
+        }
+
+        if (fallosSeguidos >= MAX_FALLOS_SEGUIDOS) {
+          break;
+        }
+      }
+
+      if (archivosEncontrados === 0) {
+        mensaje.textContent = `No se han encontrado archivos en ${carpeta}.`;
+      } else {
+        mensaje.textContent = "";
+      }
+    }
+
+    document.getElementById("cerrar-visor").addEventListener("click", cerrarVisorImagen);
+
+    document.getElementById("visor-imagen").addEventListener("click", (evento) => {
+      if (evento.target.id === "visor-imagen") {
+        cerrarVisorImagen();
+      }
+    });
+
+    document.addEventListener("keydown", (evento) => {
+      if (evento.key === "Escape") {
+        cerrarVisorImagen();
+      }
+    });
+
+    document.addEventListener("DOMContentLoaded", () => {
+      cargarGaleria(CARPETA_2D_ANIMATION, "animation2d-gallery", "animation2d-message", "2D Animation");
+      cargarGaleria(CARPETA_CONCEPTART, "conceptart-gallery", "conceptart-message", "Concept Art");
+    });
+  </script>
 </body>
 </html>
